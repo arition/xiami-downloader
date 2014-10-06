@@ -311,7 +311,7 @@ def add_id3_tag(filename, track, args):
         if args.no_lrc_timetag:
             old_lyric = lyric
             lyric = lrc2txt(lyric)
-            if lyric:
+            if not lyric:
                 lyric = old_lyric
 
         musicfile.tags.add(mutagen.id3.USLT(
