@@ -8,6 +8,7 @@ import sys
 import urllib.request, urllib.parse, urllib.error
 import xml.etree.ElementTree as ET
 import json
+import time
 import http.client
 from contextlib import closing
 from http.cookies import SimpleCookie
@@ -178,6 +179,8 @@ def parse_arguments():
                         help='filename template')
     parser.add_argument('--no-lrc-timetag', action='store_true',
                         help='remove timetag in lyric')
+    parser.add_argument('--no-wait', action='store_true',
+                        help='make download faster, but xiami may ban your account')
     parser.add_argument('-un', '--username', default='',
                         help='Vip account email')
     parser.add_argument('-pw', '--password', default='',
@@ -381,6 +384,9 @@ def main():
         if(args.username != '' and args.password != ''):
             track['location'] = vip_location(track['song_id'])
         track['url'] = decode_location(track['location'])
+        print('get %s download url' % )
+        if not args.no_wait:
+            time.sleep(10)
 
     for i, track in enumerate(tracks):
         track = xiami.format_track(track)
@@ -399,6 +405,9 @@ def main():
 
         if mutagen and downloaded and (not args.no_tag):
             add_id3_tag(output_file, track, args)
+
+        if not args.no_wait:
+            time.sleep(10)
 
 
 if __name__ == '__main__':
