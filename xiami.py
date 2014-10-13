@@ -5,9 +5,8 @@ import argparse
 import os
 import re
 import sys
-<<<<<<< HEAD
 import urllib.request, urllib.parse, urllib.error
-import HTMLParser
+import html.parser
 import json
 import time
 import http.client
@@ -100,7 +99,7 @@ def parse_playlist(playlist):
     if not data['status']:
         return []
 
-    parser = HTMLParser.HTMLParser()
+    parser = html.parser.HTMLParser()
 
     return [
         {
@@ -390,7 +389,7 @@ def main():
         if(args.username != '' and args.password != ''):
             track['location'] = vip_location(track['song_id'])
         track['url'] = decode_location(track['location'])
-        print('get %s download url' % )
+        print('get %s download url' % track['title'])
         if not args.no_wait:
             time.sleep(10)
 
