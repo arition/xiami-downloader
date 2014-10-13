@@ -42,7 +42,7 @@ HEADERS = {
 }
 
 
-def get_response(url):
+def get_response(url, decode=True):
     """ Get HTTP response as text
 
     If sent without the headers, there may be a 503/403 error.
@@ -52,8 +52,11 @@ def get_response(url):
         request.add_header(header, HEADERS[header])
 
     try:
-        response = urllib.request.urlopen(request)
-        return response.read()
+        response = urllib.request.urlopen(request).read()
+        if decode:
+            return response.decode('utf-8')
+        else:
+            return response
     except urllib.error.URLError as e:
         print(e)
         return ''
@@ -123,7 +126,7 @@ def decode_location(location):
     urllen = len(url)
     rows = int(location[0:1])
 
-    cols_base = urllen / rows  # basic column count
+    cols_base = urllen // rows  # basic column count
     rows_ex = urllen % rows    # count of rows that have 1 more column
 
     matrix = []
@@ -134,7 +137,7 @@ def decode_location(location):
 
     url = ''
     for i in range(urllen):
-        url += matrix[i % rows][i / rows]
+        url += matrix[i % rows][i // rows]
 
     return urllib.parse.unquote(url).replace('^', '0')
 
@@ -220,7 +223,7 @@ class XiamiDownloader:
 
     def format_folder(self, wrap, trackinfo):
         return os.path.join(
-            wrap.decode(default_encoding),
+            wrap,
             sanitize_filename(trackinfo['album_name'])
         )
 
@@ -290,7 +293,7 @@ def add_id3_tag(filename, track, args):
 
     print('Getting album cover...')
     # 4 for a reasonable size, or leave it None for the largest...
-    image = get_response(get_album_image_url(track['pic']))
+    image = get_response(get_album_image_url(track['pic']), decode=False)
 
     musicfile = mutagen.mp3.MP3(filename)
     try:
