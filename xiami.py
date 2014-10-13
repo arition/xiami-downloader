@@ -5,13 +5,12 @@ import argparse
 import os
 import re
 import sys
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
 import xml.etree.ElementTree as ET
 import json
-import httplib
+import http.client
 from contextlib import closing
-from Cookie import SimpleCookie
+from http.cookies import SimpleCookie
 
 from xiami_dl import get_downloader
 from xiami_util import query_yes_no
@@ -43,53 +42,41 @@ HEADERS = {
 }
 
 
-# Output / Redirected Output
-default_encoding = sys.stdout.encoding or sys.getdefaultencoding()
-if not default_encoding or default_encoding.lower() == 'ascii':
-    default_encoding = 'utf-8'
-
-
-def println(text):
-    if type(text) == unicode:
-        text = text.encode(default_encoding, errors='replace')
-    sys.stdout.write(str(text) + '\n')
-
-
 def get_response(url):
     """ Get HTTP response as text
 
     If sent without the headers, there may be a 503/403 error.
     """
-    request = urllib2.Request(url)
+    request = urllib.request.Request(url)
     for header in HEADERS:
         request.add_header(header, HEADERS[header])
 
     try:
-        response = urllib2.urlopen(request)
+        response = urllib.request.urlopen(request)
         return response.read()
-    except urllib2.URLError as e:
-        println(e)
+    except urllib.error.URLError as e:
+        print(e)
         return ''
 
 
 # https://gist.github.com/lepture/1014329
 def vip_login(email, password):
-    println('Login for vip ...')
+    print('Login for vip ...')
     _form = {
         'email': email, 'password': password,
         'LoginButton': '登录',
     }
-    data = urllib.urlencode(_form)
+    data = urllib.parse.urlencode(_form)
     headers_login = {'User-Agent': HEADERS['User-Agent']}
     headers_login['Referer'] = 'http://www.xiami.com/web/login'
     headers_login['Content-Type'] = 'application/x-www-form-urlencoded'
-    with closing(httplib.HTTPConnection('www.xiami.com')) as conn:
+    with closing(http.client.HTTPConnection('www.xiami.com')) as conn:
         conn.request('POST', '/web/login', data, headers_login)
         res = conn.getresponse()
         cookie = res.getheader('Set-Cookie')
         member_auth = SimpleCookie(cookie)['member_auth'].value
         _auth = 'member_auth=%s; t_sign_auth=1' % member_auth
-        println('Login success')
+        print('Login success')
         return _auth
 
 
@@ -97,7 +84,7 @@ def get_playlist_from_url(url):
     tracks = parse_playlist(get_response(url))
     tracks = [
         {
-            key: unicode(track[key])
+            key: track[key]
             for key in track
             if track[key]
         }
@@ -146,16 +133,16 @@ def decode_location(location):
     rows_ex = urllen % rows    # count of rows that have 1 more column
 
     matrix = []
-    for r in xrange(rows):
+    for r in range(rows):
         length = cols_base + 1 if r < rows_ex else cols_base
         matrix.append(url[:length])
         url = url[length:]
 
     url = ''
-    for i in xrange(urllen):
+    for i in range(urllen):
         url += matrix[i % rows][i / rows]
 
-    return urllib.unquote(url).replace('^', '0')
+    return urllib.parse.unquote(url).replace('^', '0')
 
 
 def sanitize_filename(filename):
@@ -215,13 +202,13 @@ class XiamiDownloader:
                 break
         last_track = len(tracks)
         trackinfo['track'] = '%s/%s' % (song_track, last_track)
-        trackinfo['id'] = str(song_track).zfill(2)
+        trackinfo['id'] = song_track.zfill(2)
         return trackinfo
 
     def format_filename(self, trackinfo):
-        template = unicode(self.name_template)
+        template = str(self.name_template)
         filename = sanitize_filename(template.format(**trackinfo))
-        return u'{}.mp3'.format(filename)
+        return '{}.mp3'.format(filename)
 
     def format_folder(self, wrap, trackinfo):
         return os.path.join(
@@ -240,7 +227,7 @@ class XiamiDownloader:
             self.downloader(url, filename, HEADERS)
             return True
         except Exception as e:
-            println(u'Error downloading: {}'.format(e))
+            print('Error downloading: {}'.format(e))
             return False
 
     def get_album(self, album_id):
@@ -291,9 +278,9 @@ def get_album_image_url(basic, size=None):
 
 
 def add_id3_tag(filename, track, args):
-    println('Tagging...')
+    print('Tagging...')
 
-    println('Getting album cover...')
+    print('Getting album cover...')
     # 4 for a reasonable size, or leave it None for the largest...
     image = get_response(get_album_image_url(track['pic'], 4))
 
@@ -305,7 +292,7 @@ def add_id3_tag(filename, track, args):
 
     # Unsynchronised lyrics/text transcription
     if 'lyric' in track:
-        println('Getting lyrics...')
+        print('Getting lyrics...')
         lyric = get_response(track['lyric'])
 
         if args.no_lrc_timetag:
@@ -316,8 +303,8 @@ def add_id3_tag(filename, track, args):
 
         musicfile.tags.add(mutagen.id3.USLT(
             encoding=3,
-            desc=u'Lyrics',
-            text=unicode(lyric, 'utf-8', errors='replace')
+            desc='Lyrics',
+            text=lyric
         ))
 
     # Track Number
@@ -350,11 +337,11 @@ def add_id3_tag(filename, track, args):
             encoding=3,         # utf-8
             mime='image/jpeg',
             type=3,             # album front cover
-            desc=u'Cover',
+            desc='Cover',
             data=image
         ))
 
-    println(musicfile.pprint())
+    print(musicfile.pprint())
 
     # Note:
     # mutagen only write id3v2 with v2.4 spec,
@@ -388,7 +375,7 @@ def main():
         for url in get_playlist_from_url(playlist_url):
             tracks.append(url)
 
-    println('%d file(s) to download' % len(tracks))
+    print('%d file(s) to download' % len(tracks))
 
     for track in tracks:
         if(args.username != '' and args.password != ''):
@@ -407,7 +394,7 @@ def main():
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-        println('\n[%d/%d] %s' % (i + 1, len(tracks), output_file))
+        print('\n[%d/%d] %s' % (i + 1, len(tracks), output_file))
         downloaded = xiami.download(track['url'], output_file)
 
         if mutagen and downloaded and (not args.no_tag):
