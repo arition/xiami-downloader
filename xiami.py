@@ -5,8 +5,9 @@ import argparse
 import os
 import re
 import sys
+<<<<<<< HEAD
 import urllib.request, urllib.parse, urllib.error
-import xml.etree.ElementTree as ET
+import HTMLParser
 import json
 import time
 import http.client
@@ -29,10 +30,9 @@ except:
 VERSION = '0.3.1'
 
 URL_PATTERN_ID = 'http://www.xiami.com/song/playlist/id/%d'
-URL_PATTERN_SONG = '%s/object_name/default/object_id/0' % URL_PATTERN_ID
-URL_PATTERN_ALBUM = '%s/type/1' % URL_PATTERN_ID
-URL_PATTERN_PLAYLIST = '%s/type/3' % URL_PATTERN_ID
-URL_PATTERN_ALBUMFULL = 'http://www.xiami.com/app/android/album?id=%s'
+URL_PATTERN_SONG = URL_PATTERN_ID + '/object_name/default/object_id/0/cat/json'
+URL_PATTERN_ALBUM = URL_PATTERN_ID + '/type/1/cat/json'
+URL_PATTERN_PLAYLIST = URL_PATTERN_ID + '/type/3/cat/json'
 URL_PATTERN_VIP = 'http://www.xiami.com/song/gethqsong/sid/%s'
 
 HEADERS = {
@@ -95,28 +95,22 @@ def get_playlist_from_url(url):
 
 
 def parse_playlist(playlist):
-    try:
-        # Removes the XML namespace
-        playlist = re.sub(r'xmlns=\".*?\"', '', playlist)
-        # Replace chars like &#039;
-        matches = re.findall(r'(?<=&#)\d+(?=;)', playlist)
-        for match in matches:
-            playlist = playlist.replace('&#'+match+';', chr(int(match)))
-        playlist = playlist.replace('&quot;', '"').replace('&gt;', '>') \
-            .replace('&lt;', '<').replace('&amp;', '&')
-        xml = ET.fromstring(playlist)
-    except:
+    data = json.loads(playlist)
+
+    if not data['status']:
         return []
+
+    parser = HTMLParser.HTMLParser()
 
     return [
         {
-            key: track.find(key).text
+            key: parser.unescape(track[key])
             for key in [
                 'title', 'location', 'lyric', 'pic', 'artist', 'album_name',
                 'song_id', 'album_id'
             ]
         }
-        for track in xml.iter('track')
+        for track in data['data']['trackList']
     ]
 
 
@@ -195,17 +189,29 @@ class XiamiDownloader:
         self.downloader = get_downloader(args.tool)
         self.force_mode = args.force
         self.name_template = args.name_template
+        self.song_track_db = {}
 
     def format_track(self, trackinfo):
-        tracks = self.get_album(trackinfo['album_id'])['data']['trackList']
-        song_track = 0
-        for i, track in enumerate(tracks):
-            if track['song_id'] == trackinfo['song_id']:
-                song_track = i+1
-                break
-        last_track = len(tracks)
-        trackinfo['track'] = '%s/%s' % (song_track, last_track)
-        trackinfo['id'] = song_track.zfill(2)
+        song_id = trackinfo['song_id']
+
+        # Cache the track info
+        if song_id not in self.song_track_db:
+            tracks = self.get_album(trackinfo['album_id'])['data']['trackList']
+            for i, track in enumerate(tracks):
+                self.song_track_db[track['song_id']] = {
+                    'track': i + 1,
+                    'track_count': len(tracks)
+                }
+
+        if song_id in self.song_track_db:
+            song_track = self.song_track_db[song_id]['track']
+            song_track_count = self.song_track_db[song_id]['track_count']
+        else:
+            song_track = 0
+            song_track_count = 0
+
+        trackinfo['track'] = '%s/%s' % (song_track, song_track_count)
+        trackinfo['id'] = str(song_track).zfill(2)
         return trackinfo
 
     def format_filename(self, trackinfo):
