@@ -177,8 +177,8 @@ def parse_arguments():
                         help='save downloads to the directory')
     parser.add_argument('--name-template', default='{id} - {title} - {artist}',
                         help='filename template')
-    parser.add_argument('--no-lrc-timetag', action='store_true',
-                        help='remove timetag in lyric')
+    parser.add_argument('--lrc-timetag', action='store_true',
+                        help='keep timetag in lyric')
     parser.add_argument('--no-wait', action='store_true',
                         help='make download faster, but xiami may ban your account')
     parser.add_argument('-un', '--username', default='',
@@ -298,7 +298,7 @@ def add_id3_tag(filename, track, args):
         print('Getting lyrics...')
         lyric = get_response(track['lyric'])
 
-        if args.no_lrc_timetag:
+        if not args.lrc_timetag:
             old_lyric = lyric
             lyric = lrc2txt(lyric)
             if not lyric:
