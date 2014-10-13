@@ -11,9 +11,9 @@ setup(
     description='Python script for download preview music from xiami.com.',
     long_description=long_description,
 
-    url='https://github.com/timothyqiu/xiami-downloader',
+    url='https://github.com/arition/xiami-downloader',
 
-    author='Timothy Qiu',
+    author='Timothy Qiu, modified by arition',
 
     license='MIT',
 
@@ -23,7 +23,7 @@ setup(
         'Intended Audience :: End Users/Desktop',
         'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX',
-        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
     ],
 
     py_modules=['xiami', 'xiami_dl', 'xiami_util'],

@@ -2,7 +2,7 @@
 
 A simple tool for downloading music previews from [Xiami.com][1]
 
-Note: this is a python script using python 2.
+Note: this is a python script using python 3.
 
 ## Dependency
 
@@ -23,7 +23,8 @@ Note: this is a python script using python 2.
 * `--no-tag` do not add tag.
 * `--directory` save all downloads into the directory.
 * `--name-template` Filename template.
-* `--no-lrc-timetag` Remove timetag in lyric.
+* `--lrc-timetag` Keep timetag in lyric.
+* `--no-wait` Make download faster, but xiami may ban your account.
 * `-un <email>` Vip account email.
 * `-pw <password>` Vip account password.
 
@@ -57,7 +58,7 @@ This software is distributed under the [MIT License][2].
 
 从[虾米网][1]上下载音乐试听的小工具。
 
-注：这是一个 Python 2 脚本
+注：这是一个 Python 3 脚本
 
 ## 依赖
 
@@ -78,9 +79,10 @@ This software is distributed under the [MIT License][2].
 * `--no-tag` 不添加 ID3 Tag。
 * `--directory` 将下载到的文件放入该文件夹中。
 * `--name-template` 文件名模版。
-* `--no-lrc-timetag` 去除歌词中的时间标签.
-* `-un <email>` Vip账号.
-* `-pw <password>` Vip账号密码.
+* `--lrc-timetag` 保留歌词中的时间标签。
+* `--no-wait` 去除歌曲下载之间的等待间隔。可以加速下载，但有可能导致封号.
+* `-un <email>` Vip账号。
+* `-pw <password>` Vip账号密码。
 
 `<歌曲ID>`、`<精选集ID>` 及 `<专辑ID>` 都可以从对应虾米页面的 URL 中找出。
 
