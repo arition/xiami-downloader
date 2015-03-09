@@ -101,6 +101,11 @@ def parse_playlist(playlist):
 
     if not data['status']:
         return []
+        
+    # trackList would be `null` if no tracks
+    track_list = data['data']['trackList']
+    if not track_list:
+        return []
 
     parser = html.parser.HTMLParser()
 
@@ -112,7 +117,7 @@ def parse_playlist(playlist):
                 'song_id', 'album_id'
             ]
         }
-        for track in data['data']['trackList']
+        for track in track_list
     ]
 
 
@@ -380,7 +385,7 @@ def main():
     if args.playlist:
         urls.extend(build_url_list(URL_PATTERN_PLAYLIST, args.playlist))
 
-    if(args.username != '' and args.password != ''):
+    if args.username and args.password:
         HEADERS['Cookie'] = vip_login(args.username, args.password)
 
     # parse playlist xml for a list of track info
@@ -392,7 +397,7 @@ def main():
     print('%d file(s) to download' % len(tracks))
 
     for track in tracks:
-        if(args.username != '' and args.password != ''):
+        if args.username and args.password:
             track['location'] = vip_location(track['song_id'])
         track['url'] = decode_location(track['location'])
         print('get %s download url' % track['title'])
