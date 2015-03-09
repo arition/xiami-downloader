@@ -143,7 +143,7 @@ def decode_location(location):
 
 
 def sanitize_filename(filename):
-    return re.sub(r'[\\/:*?<>|]', '_', filename)
+    return re.sub(r'[\\/:*?<>|"\']', '_', filename)
 
 
 def parse_arguments():
@@ -228,7 +228,10 @@ class XiamiDownloader:
         )
 
     def format_output(self, folder, filename):
-        return os.path.join(folder, filename)
+        return os.path.join(
+            folder, 
+            sanitize_filename(filename)
+        )
 
     def download(self, url, filename):
         if not self.force_mode and os.path.exists(filename):
