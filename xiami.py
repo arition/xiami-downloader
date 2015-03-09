@@ -186,6 +186,8 @@ def parse_arguments():
                         help='Vip account email')
     parser.add_argument('-pw', '--password', default='',
                         help='Vip account password')
+    parser.add_argument('-ma', '--memberAuth', default='',
+                        help='Cookie member_auth')
 
     return parser.parse_args()
 
@@ -385,8 +387,14 @@ def main():
     if args.playlist:
         urls.extend(build_url_list(URL_PATTERN_PLAYLIST, args.playlist))
 
-    if args.username and args.password:
+    vip_mode = args.username and args.password
+    if vip_mode:
         HEADERS['Cookie'] = vip_login(args.username, args.password)
+    else:
+        vip_mode = args.memberAuth
+        if vip_mode:
+            HEADERS['Cookie'] = 'member_auth=%s; t_sign_auth=1' % args.memberAuth
+    
 
     # parse playlist xml for a list of track info
     tracks = []
@@ -397,7 +405,7 @@ def main():
     print('%d file(s) to download' % len(tracks))
 
     for track in tracks:
-        if args.username and args.password:
+        if vip_mode:
             track['location'] = vip_location(track['song_id'])
         track['url'] = decode_location(track['location'])
         print('get %s download url' % track['title'])
